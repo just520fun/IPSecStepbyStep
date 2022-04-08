@@ -9,7 +9,7 @@ Install strongswan IPsec server :
 sudo apt-get install strongswan libcharon-extra-plugins libstrongswan-extra-plugins
 
 
-Step1
+Step1 IKEv1
 
 Hardware and Network Topology
 Raspberry Pi - LAN (openwrt router) WLAN - Android Smart Phone
@@ -39,7 +39,8 @@ conn IPsec-Xauth-PSK
         keyexchange=ikev1
         authby=xauthpsk
         xauth=server
-        left=192.168.1.4
+        ike=aes256-sha1-modp1024!
+        left=192.168.1.114
         leftsubnet=0.0.0.0/0
         leftfirewall=yes
         right=%any
@@ -49,12 +50,12 @@ conn IPsec-Xauth-PSK
 
 include /var/lib/strongswan/ipsec.conf.inc
 
-Change 192.168.1.4 by your Pi address !
+Change 192.168.1.114 by your Pi address !
 Secrets
 
 Edit the secret files :
 
-sudo vi /etc/ipsec.secrets
+sudo nano /etc/ipsec.secrets
 
 As follow :
 
@@ -66,7 +67,7 @@ As follow :
 # this file is managed with debconf and will contain the automatically created private key
 include /var/lib/strongswan/ipsec.secrets.inc
 
-192.168.1.4 : PSK "MyPresharedKey"
+192.168.1.114 : PSK "MyPresharedKey"
 
 MyUser : XAUTH "MyPassword"
 
@@ -78,7 +79,9 @@ Then we can restart the service :
 
 And check the logs :
 
-tail -n 100 /var/log/syslog
+tail -n 100 /var/log/syslog 
+or
+systemctl status ipsec.service
 
 The end should looks like this :
 
