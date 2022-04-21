@@ -261,7 +261,157 @@ Apr 21 10:27:22 raspberrypi charon: 07[IKE] initiating Main Mode IKE_SA test_ips
 Apr 21 10:27:22 raspberrypi charon: 10[IKE] IKE_SA test_ipsec[1] established between 192.168.1.114[192.168.1.114]...192.168.1.107[192.168.1.107]
 Apr 21 10:27:22 raspberrypi charon: 11[IKE] CHILD_SA test_ipsec{1} established with SPIs c65f000c_i c72cddaf_o and TS 172.11.11.0/24 === 10.10.12.0/24
 
+-----------------------
 Step3 IKEv2
+Hardware and Network Topology
+Raspberry Pi - LAN (openwrt router) LAN - OrangePi
+
+Software Configuration
+
+Raspberry Pi
+/etc/ipsec.conf
+# ipsec.conf - strongSwan IPsec configuration file
+
+# basic configuration
+
+config setup
+        # strictcrlpolicy=yes
+        # uniqueids = no
+
+# Add connections here.
+conn %default%
+        ikelifetime=28800
+        keylife=20m
+        rekeymargin=3m
+        keyingtries=1
+        keyexchange=ikev2
+
+
+conn test_ipsec
+        left=192.168.1.107 #本端IP
+        right=192.168.1.114 #对端IP
+        leftsubnet=10.10.12.0/24 #本端子网
+        leftauth=secret
+        rightauth=secret
+        rightsubnet=172.11.11.0/24 #对端子网
+        auto=start
+        leftid=192.168.1.107
+        rightid=192.168.1.114
+        ike=aes256-sha1-modp2048!
+        esp=aes256-sha1!
+
+/etc/ipsec.secrets
+# This file holds shared secrets or RSA private keys for authentication.
+
+# RSA private key for this host, authenticating it to any other host
+# which knows the public part.
+192.168.1.107 192.168.1.114 : PSK 123456abcd
+
+/etc/strongswan.conf
+# strongswan.conf - strongSwan configuration file
+#
+# Refer to the strongswan.conf(5) manpage for details
+#
+# Configuration changes should be made in the included files
+
+charon {
+        load_modular = yes
+        duplicheck{
+                enable = no
+        }
+        compress = yes
+        plugins {
+                include strongswan.d/charon/*.conf
+        }
+        dns1 = 114.114.114.114
+        nbns1 = 114.114.114.114
+}
+
+include strongswan.d/*.conf
+
+OrangePi
+/etc/ipsec.conf
+# ipsec.conf - strongSwan IPsec configuration file
+
+# basic configuration
+
+config setup
+        # strictcrlpolicy=yes
+        # uniqueids = no
+
+# Add connections here.
+conn %default%
+        ikelifetime=28800
+        keylife=20m
+        rekeymargin=3m
+        keyingtries=1
+        keyexchange=ikev2
+
+
+conn test_ipsec
+        left=192.168.1.114 #本端IP
+        right=192.168.1.107 #对端IP
+        leftsubnet=172.11.11.0/24 #本端子网
+        leftauth=secret
+        rightauth=secret
+        rightsubnet=10.10.12.0/24 #对端子网
+        auto=start
+        leftid=192.168.1.114
+        rightid=192.168.1.107
+        ike=aes256-sha1-modp2048!
+        esp=aes256-sha1!
+
+
+/etc/ipsec.secrets
+# This file holds shared secrets or RSA private keys for authentication.
+
+# RSA private key for this host, authenticating it to any other host
+# which knows the public part.
+192.168.1.107 192.168.1.114 : PSK 123456abcd
+
+/etc/strongswan.conf
+# strongswan.conf - strongSwan configuration file
+#
+# Refer to the strongswan.conf(5) manpage for details
+#
+# Configuration changes should be made in the included files
+
+charon {
+        load_modular = yes
+        duplicheck{
+                enable = no
+        }
+        compress = yes
+        plugins {
+                include strongswan.d/charon/*.conf
+        }
+        dns1 = 114.114.114.114
+        nbns1 = 114.114.114.114
+}
+
+include strongswan.d/*.conf
+
+restart logs
+Apr 21 10:47:28 raspberrypi systemd[1]: Stopped strongSwan IPsec IKEv1/IKEv2 daemon using ipsec.conf.
+Apr 21 10:47:28 raspberrypi systemd[1]: Started strongSwan IPsec IKEv1/IKEv2 daemon using ipsec.conf.
+pi@raspberrypi:~ $ Apr 21 10:47:28 raspberrypi ipsec[3594]: Starting strongSwan 5.7.2 IPsec [starter]...
+Apr 21 10:47:29 raspberrypi charon: 00[CFG] loading ca certificates from '/etc/ipsec.d/cacerts'
+Apr 21 10:47:29 raspberrypi charon: 00[CFG] loading aa certificates from '/etc/ipsec.d/aacerts'
+Apr 21 10:47:29 raspberrypi charon: 00[CFG] loading ocsp signer certificates from '/etc/ipsec.d/ocspcerts'
+Apr 21 10:47:29 raspberrypi charon: 00[CFG] loading attribute certificates from '/etc/ipsec.d/acerts'
+Apr 21 10:47:29 raspberrypi charon: 00[CFG] loading crls from '/etc/ipsec.d/crls'
+Apr 21 10:47:29 raspberrypi charon: 00[CFG] loading secrets from '/etc/ipsec.secrets'
+Apr 21 10:47:29 raspberrypi charon: 00[CFG] expanding file expression '/var/lib/strongswan/ipsec.secrets.inc' failed
+Apr 21 10:47:29 raspberrypi ipsec[3594]: charon (3608) started after 740 ms
+Apr 21 10:47:29 raspberrypi charon: 03[CFG] received stroke: add connection 'test_ipsec'
+Apr 21 10:47:29 raspberrypi charon: 03[CFG] added configuration 'test_ipsec'
+Apr 21 10:47:29 raspberrypi charon: 06[CFG] received stroke: initiate 'test_ipsec'
+Apr 21 10:47:29 raspberrypi charon: 06[IKE] initiating IKE_SA test_ipsec[1] to 192.168.1.107
+Apr 21 10:47:29 raspberrypi charon: 09[IKE] establishing CHILD_SA test_ipsec{1}
+Apr 21 10:47:29 raspberrypi charon: 10[IKE] IKE_SA test_ipsec[1] established between 192.168.1.114[192.168.1.114]...192.168.1.107[192.168.1.107]
+
+-------------------------
+Step4 IKEv2
 Hardware and Network Topology
 Raspberry Pi - LAN (openwrt router) LAN - OrangePi
 
@@ -278,7 +428,8 @@ OrangePi
 
 restart logs
 
-Step4 IKEv2
+-------------------------
+Step5 IKEv2
 Hardware and Network Topology
 Raspberry Pi - LAN (openwrt router) LAN - OrangePi
 
